@@ -130,7 +130,7 @@ export default function CareerRecommendationSystem() {
 
             <div className="text-center">
               <img
-                src="/public/43a268f5d5ef2e8cb7a71b7f11223c4.jpg"
+                src="/43a268f5d5ef2e8cb7a71b7f11223c4.jpg"
                 alt="职业兴趣六边形"
                 className="mx-auto max-w-full rounded-xl shadow-md"
               />
