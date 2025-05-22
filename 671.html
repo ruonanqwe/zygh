@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能职业推荐系统</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body { background: #f7f9fa; }
+    .container { max-width: 600px; margin: 60px auto 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #e6eaf1; padding: 40px 32px 32px 32px; }
+    h2 { text-align: center; margin-bottom: 32px; font-weight: bold; }
+    .form-label { font-weight: 500; }
+    .carousel-btn { font-size:28px; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px #e6eaf1; }
+    .carousel-btn:disabled { opacity:0.3; }
+    .job-card-anim { animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(30px);} to { opacity:1; transform:none; } }
+    .select2 { min-width: 100%; }
+    @media (max-width: 700px) {
+      .container { padding: 18px 2vw; }
+      .carousel-btn { width:38px; height:38px; font-size:22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>智能职业推荐系统</h2>
+    <form id="retestForm" class="row g-3 mb-3">
+      <div class="col-md-12">
+        <label class="form-label">学校</label>
+        <select name="school" class="form-select" required>
+          <option value="四川财经职业学院" selected>四川财经职业学院</option>
+        </select>
+      </div>
+      <div class="col-md-12">
+        <label class="form-label">专业</label>
+        <select name="major" class="form-select" required>
+          <option value="工业互联网应用">工业互联网应用</option>
+          <option value="无人机应用技术">无人机应用技术</option>
+          <option value="智能网联汽车技术">智能网联汽车技术</option>
+          <option value="大数据技术">大数据技术</option>
+          <option value="信息安全技术应用">信息安全技术应用</option>
+          <option value="人工智能技术应用">人工智能技术应用</option>
+          <option value="财税大数据应用">财税大数据应用</option>
+          <option value="政府采购管理">政府采购管理</option>
+          <option value="财政支出绩效管理">财政支出绩效管理</option>
+          <option value="金融服务与管理">金融服务与管理</option>
+          <option value="金融科技应用">金融科技应用</option>
+          <option value="财富管理">财富管理</option>
+          <option value="大数据与财务管理">大数据与财务管理</option>
+          <option value="大数据与会计">大数据与会计</option>
+          <option value="大数据与审计">大数据与审计</option>
+          <option value="会计信息管理">会计信息管理</option>
+          <option value="市场调查与统计分析">市场调查与统计分析</option>
+          <option value="工商企业管理">工商企业管理</option>
+          <option value="市场营销">市场营销</option>
+          <option value="电子商务">电子商务</option>
+          <option value="移动商务">移动商务</option>
+          <option value="农村电子商务">农村电子商务</option>
+          <option value="商务数据分析与应用">商务数据分析与应用</option>
+          <option value="现代物流管理">现代物流管理</option>
+          <option value="酒店管理与数字化运营">酒店管理与数字化运营</option>
+        </select>
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">兴趣代码</label>
+        <input name="interest" class="form-control" placeholder="请输入兴趣代码" required>
+      </div>
+      <div class="col-md-12" style="text-align:center;margin-bottom:10px;">
+        <img src="43a268f5d5ef2e8cb7a71b7f11223c4.jpg" alt="职业兴趣六边形" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 2px 12px #e6eaf1;">
+      </div>
+      <div class="col-md-12 d-grid">
+        <button class="btn btn-primary btn-lg" style="border-radius:24px;">生成推荐</button>
+      </div>
+    </form>
+    <div id="retestResult" class="mt-3"></div>
+    <div id="jobCarousel" class="mt-4"></div>
+  </div>
+  <script>
+    document.getElementById('retestForm').onsubmit = function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const school = form.school.value.trim();
+      const major = form.major.value.trim();
+      const interest = form.interest.value.trim();
+      let result = `<b>学校：</b>${school}，<b>专业：</b>${major}，<b>兴趣代码：</b>${interest}<br>`;
+      result += `智能分析系统正在结合院校背景、专业优势及行业发展趋势进行专业探索。<br>`;
+      result += `智能系统会优先考虑与您学校、专业背景匹配度高、发展潜力强的职业路径。`;
+      document.getElementById('retestResult').innerHTML = result;
+      // 隐藏表单和说明
+      document.getElementById('retestForm').style.display = 'none';
+      document.getElementById('retestResult').style.display = 'none';
+      generateJobCard(school, major, interest);
+    };
+
+    let jobList = [];
+    let currentIndex = 0;
+
+    function renderJobCarousel() {
+      if (!jobList.length) {
+        document.getElementById('jobCarousel').innerHTML = '未能获取到职业推荐，请重试。';
+        return;
+      }
+      const job = jobList[currentIndex];
+      document.getElementById('jobCarousel').innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;">
+          <button class="btn btn-light carousel-btn" onclick="prevJob()" ${currentIndex===0?'disabled':''}>&#8592;</button>
+          <div style="flex:1;max-width:420px;margin:0 18px;touch-action:pan-y;" id="carouselCard" class="job-card-anim">
+            <div class="job-card-anim" style="background:#f6f8fa;border-radius:16px;padding:28px 24px;box-shadow:0 2px 8px #e6eaf1;">
+              <h4 style="font-weight:bold;">${job['岗位名称'] || ''}</h4>
+              <span style="background:#1890ff22;color:#1890ff;padding:2px 12px;border-radius:12px;font-size:14px;">${job['行业'] || ''}</span>
+              <p style="margin-top:16px;">${job['岗位描述'] || ''}</p>
+              <div style="margin:18px 0 8px 0;">
+                <div style="background:#e6f7ff;padding:10px 16px;border-radius:8px;margin-bottom:8px;"><b>匹配特质：</b>${job['匹配特质'] || ''}</div>
+                <div style="background:#fffbe6;padding:10px 16px;border-radius:8px;margin-bottom:8px;"><b>优势：</b>${job['优势'] || ''}</div>
+                <div style="background:#f6ffed;padding:10px 16px;border-radius:8px;margin-bottom:8px;"><b>需要掌握的技能：</b>${job['需要掌握的技能'] || ''}</div>
+                <div style="background:#f0f5ff;padding:10px 16px;border-radius:8px;"><b>适合人群画像：</b>${job['适合人群画像'] || ''}</div>
+              </div>
+            </div>
+            <div style="text-align:center;margin-top:10px;color:#888;">${currentIndex+1} / ${jobList.length}</div>
+            <div style="text-align:center;margin-top:18px;">
+              <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()" style="border-radius:16px;">重新填写</button>
+            </div>
+          </div>
+          <button class="btn btn-light carousel-btn" onclick="nextJob()" ${currentIndex===jobList.length-1?'disabled':''}>&#8594;</button>
+        </div>
+      `;
+      // 移动端左右滑动支持
+      const card = document.getElementById('carouselCard');
+      let startX = null;
+      card.ontouchstart = e => { startX = e.touches[0].clientX; };
+      card.ontouchend = e => {
+        if(startX === null) return;
+        let endX = e.changedTouches[0].clientX;
+        if(endX - startX > 40) prevJob();
+        else if(startX - endX > 40) nextJob();
+        startX = null;
+      };
+    }
+    function prevJob() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderJobCarousel();
+      }
+    }
+    function nextJob() {
+      if (currentIndex < jobList.length-1) {
+        currentIndex++;
+        renderJobCarousel();
+      }
+    }
+
+    // 多模型兜底列表
+    const aiModels = [
+      { model: "Qwen/QwQ-32B" },
+      { model: "Qwen/Qwen3-8B" },
+      { model: "THUDM/GLM-Z1-9B-0414" },
+      { model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B" }
+    ];
+
+    async function tryGenerateWithModels(school, major, interest) {
+      for (let i = 0; i < aiModels.length; i++) {
+        const { model } = aiModels[i];
+        document.getElementById('jobCarousel').innerHTML = `
+          <div style="text-align:center;padding:40px 0;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div style="margin-top:16px;color:#888;">正在尝试模型：<b>${model}</b>，请稍候...</div>
+          </div>
+        `;
+        const result = await tryGenerateWithModel(model, school, major, interest);
+        if (result && Array.isArray(result) && result.length) {
+          return result; // 成功，返回岗位数组
+        }
+      }
+      return null; // 全部失败
+    }
+
+    async function tryGenerateWithModel(model, school, major, interest) {
+      const apiKey = 'sk-yvsmejuumtbmcluteqsgvdntauhdnujthocvluzdtbnuecqu';
+      const apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
+      const systemPrompt = `你是一个职业生涯分析专家，请根据用户的学校、专业、兴趣代码，推荐10个最适合的职业，并严格按照如下JSON数组格式返回：\\n[\\n  {\\n    \"岗位名称\": \"\",\\n    \"行业\": \"\",\\n    \"岗位描述\": \"\",\\n    \"匹配特质\": \"\",\\n    \"优势\": \"\",\\n    \"需要掌握的技能\": \"\",\\n    \"适合人群画像\": \"\"\\n  }\\n  // ...共10个\\n]\\n只返回JSON数组，不要有多余解释。`;
+      const userPrompt = `我的学校：${school}\\n我的专业：${major}\\n我的兴趣代码：${interest}`;
+      const body = {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        stream: false,
+        max_tokens: 2048,
+        temperature: 0.7,
+        top_p: 0.7,
+        top_k: 50,
+        frequency_penalty: 0.5,
+        n: 1,
+        response_format: { type: "text" }
+      };
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content || '';
+        let jobs;
+        try {
+          jobs = JSON.parse(reply);
+        } catch (e) {
+          jobs = null;
+        }
+        return jobs;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function generateJobCard(school, major, interest) {
+      document.getElementById('jobCarousel').innerHTML = `
+        <div style="text-align:center;padding:40px 0;">
+          <div class="spinner-border text-primary" role="status"></div>
+          <div style="margin-top:16px;color:#888;">正在生成，请稍候...</div>
+        </div>
+      `;
+      const jobs = await tryGenerateWithModels(school, major, interest);
+      if (Array.isArray(jobs) && jobs.length) {
+        jobList = jobs;
+        currentIndex = 0;
+        renderJobCarousel();
+      } else {
+        document.getElementById('jobCarousel').innerHTML = '未能获取到职业推荐，请重试。';
+      }
+    }
+  </script>
+</body>
+</html>
